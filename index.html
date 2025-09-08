@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="referrer" content="no-referrer">
-  <title>Clappr Video Player</title>
+  <title>Clappr Video Player - Zobi TV</title>
   <link href="https://www.hls-player.net/fav.png" rel="icon" type="image/x-icon">
-  <!-- Consolidated Clappr and plugins scripts -->
+  <!-- Optimized Clappr and plugin scripts with specific versions for reliability -->
   <script src="https://cdn.jsdelivr.net/npm/@clappr/player@0.4.37/dist/clappr.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/cdnbye@3.2.2/dist/hlsjs-p2p-engine.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@clappr/hlsjs-playback@1.2.0/dist/hlsjs-playback.min.js"></script>
@@ -71,11 +71,26 @@
       z-index: 2000;
     }
 
+    /* Ensure watermark visibility */
+    .watermark {
+      z-index: 999 !important;
+      opacity: 0.9;
+      max-width: 120px; /* Adjust size as needed */
+      transition: opacity 0.3s ease;
+    }
+
+    .watermark:hover {
+      opacity: 1;
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
       .join-us {
         padding: 6px 12px;
         font-size: 12px;
+      }
+      .watermark {
+        max-width: 80px; /* Smaller watermark on mobile */
       }
     }
   </style>
@@ -83,7 +98,7 @@
 <body>
   <div class="video-container">
     <div id="player"></div>
-    <a href="https://t.me/zobitv" class="join-us">Join Us</a>
+    <a href="https://t.me/zobitv" class="join-us">Join Zobi TV</a>
     <div class="error-message" id="error-message"></div>
   </div>
 
@@ -126,11 +141,25 @@
         watermarkLink: 'https://t.me/zobitv',
         position: 'top-right',
         plugins: [CDNByeClapprPlugin, HlsjsPlayback, LevelSelector],
+        levelSelectorConfig: {
+          labels: {
+            6: '1080',
+            5: '720',
+            4: '480',
+            3: '360',
+            2: '240',
+            1: '120',
+            0: 'Auto'
+          },
+          labelCallback: function (resolution, label) {
+            return label;
+          }
+        },
         playback: {
           hlsjsConfig: {
-            maxBufferLength: 60,
+            maxBufferLength: 60, // Reduced for better performance
             p2pConfig: {
-              logLevel: 'warn',
+              logLevel: 'warn', // Less verbose logging
               live: true,
               announceLocation: true
             }
@@ -140,13 +169,17 @@
           onError: (error) => {
             console.error('Player error:', error);
             showError('Failed to load video. Please check the URL or try again later.');
+          },
+          onReady: () => {
+            console.log('Player is ready. Checking watermark...');
+            const watermark = document.querySelector('.watermark img');
+            if (watermark) {
+              console.log('Watermark found:', watermark.src);
+            } else {
+              console.warn('Watermark not found. Check watermark URL or player configuration.');
+            }
           }
         }
-      });
-
-      // Handle player ready event
-      player.on('ready', () => {
-        console.log('Player is ready');
       });
 
       // Handle playback level change
