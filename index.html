@@ -11,34 +11,29 @@
   <script src="https://cdn.jsdelivr.net/npm/cdnbye@latest/dist/clappr-plugin.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/clappr/clappr-level-selector-plugin@latest/dist/level-selector.min.js"></script>
 
-  <link href="https://www.hls-player.net/fav.png" rel="icon" type="image/x-icon"/>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #000;
+    body { margin:0; padding:0; background:#000; }
+    .video-con { width:100%; height:100vh; display:flex; align-items:center; justify-content:center; }
+    .placeholder {
+      color:#888;
+      font-size:18px;
+      font-family:sans-serif;
+      text-align:center;
     }
-    .video-con {
-      width: 100%;
-      height: 100vh;
-      position: relative;
-    }
-    /* Custom buttons style inside Clappr controls */
-    .clappr-pip-btn,
-    .clappr-full-btn {
-      background: none;
-      border: 0;
-      color: #fff;
-      font-size: 16px;
-      padding: 6px 10px;
-      cursor: pointer;
+    .clappr-extra-btn {
+      background:none;
+      border:0;
+      color:#fff;
+      font-size:16px;
+      padding:6px 10px;
+      cursor:pointer;
     }
   </style>
 </head>
 <body>
 <div class="video-con">
-  <meta content="no-referrer" name="referrer">
-  <div id="vid"></div>
+  <div id="vid" style="width:100%; height:100%;"></div>
+  <div id="placeholder" class="placeholder">CLICK channel to play</div>
 </div>
 
 <script>
@@ -46,81 +41,82 @@
     const queryParams = new URLSearchParams(window.location.search);
     return queryParams.get(param);
   }
+
   const videoSource = getQueryParam('url');
 
-  // ---- Custom PiP Plugin ----
-  class PipButton extends Clappr.UICorePlugin {
-    get name() { return 'pip_button' }
-    bindEvents() {
-      this.listenTo(this.core.mediaControl, Clappr.Events.MEDIACONTROL_RENDERED, this.render)
-    }
-    render() {
-      if (!document.pictureInPictureEnabled) return;
-      const btn = document.createElement('button')
-      btn.className = 'clappr-pip-btn'
-      btn.innerHTML = '🖼'
-      btn.title = 'Picture-in-Picture'
-      btn.onclick = async () => {
-        try {
-          const videoEl = this.core.getCurrentPlayback().el
-          if (document.pictureInPictureElement) {
-            await document.exitPictureInPicture()
-          } else {
-            await videoEl.requestPictureInPicture()
-          }
-        } catch (e) { console.error('PiP error:', e) }
-      }
-      this.core.mediaControl.$('.media-control-right-panel').append(btn)
-    }
-  }
+  if (videoSource) {
+    document.getElementById("placeholder").style.display = "none";
 
-  // ---- Custom Fullscreen Button ----
-  class FullButton extends Clappr.UICorePlugin {
-    get name() { return 'full_button' }
-    bindEvents() {
-      this.listenTo(this.core.mediaControl, Clappr.Events.MEDIACONTROL_RENDERED, this.render)
-    }
-    render() {
-      const btn = document.createElement('button')
-      btn.className = 'clappr-full-btn'
-      btn.innerHTML = '⛶'
-      btn.title = 'Fullscreen'
-      btn.onclick = () => {
-        const el = this.core.el
-        if (!document.fullscreenElement) {
-          el.requestFullscreen().catch(err=>console.error(err))
-        } else {
-          document.exitFullscreen()
+    const player = new Clappr.Player({
+      parentId: '#vid',
+      source: videoSource,
+      mimeType: 'application/x-mpegURL',
+      autoPlay: true,
+      mute: true,
+      height: '100%',
+      width: '100%',
+      watermark: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
+      watermarkLink: 'https://t.me/zobitv',
+      position: 'top-right',
+      plugins: [CDNByeClapprPlugin, LevelSelector],
+      levelSelectorConfig: {
+        labels: {6:'1080',5:'720',4:'480',3:'360',2:'240',1:'120',0:'Auto'},
+        labelCallback: (resolution,label)=>label
+      },
+      playback: {
+        hlsjsConfig: { p2pConfig: { logLevel: 'debug', live: true } }
+      }
+    });
+
+    // Add PiP & Fullscreen buttons
+    player.on(Clappr.Events.PLAYER_READY, () => {
+      const controls = player.core.mediaControl.$el.find('.media-control-right-panel')
+
+      // PiP
+      if (document.pictureInPictureEnabled) {
+        const pipBtn = document.createElement('button')
+        pipBtn.className = 'clappr-extra-btn'
+        pipBtn.innerHTML = '🖼'
+        pipBtn.title = 'Picture-in-Picture'
+        pipBtn.onclick = async () => {
+          try {
+            const videoEl = player.getPlugin('hlsjs')._hls.media
+            if (document.pictureInPictureElement) {
+              await document.exitPictureInPicture()
+            } else {
+              await videoEl.requestPictureInPicture()
+            }
+          } catch (e) { console.error(e) }
         }
+        controls.append(pipBtn)
+      }
+
+      // Fullscreen
+      const fsBtn = document.createElement('button')
+      fsBtn.className = 'clappr-extra-btn'
+      fsBtn.innerHTML = '⛶'
+      fsBtn.title = 'Fullscreen'
+      fsBtn.onclick = async () => {
+        try {
+          if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen()
+            if (screen.orientation && screen.orientation.lock) {
+              try { await screen.orientation.lock('landscape') } catch(e) { console.warn('Orientation lock failed', e) }
+            }
+          } else {
+            await document.exitFullscreen()
+            if (screen.orientation && screen.orientation.unlock) {
+              screen.orientation.unlock()
+            }
+          }
+        } catch (err) { console.error(err) }
       }
       document.addEventListener('fullscreenchange',()=>{
-        btn.textContent = document.fullscreenElement ? '↙' : '⛶'
+        fsBtn.textContent = document.fullscreenElement ? '↙' : '⛶'
       })
-      this.core.mediaControl.$('.media-control-right-panel').append(btn)
-    }
+      controls.append(fsBtn)
+    })
   }
-
-  // ---- Create Player ----
-  const player = new Clappr.Player({
-    parentId: '#vid',
-    source: videoSource,
-    mimeType: 'application/x-mpegURL',
-    autoPlay: true,
-    mute: true,
-    height: '100%',
-    width: '100%',
-    watermark: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
-    watermarkLink: 'https://t.me/zobitv',
-    position: 'top-right',
-    plugins: [CDNByeClapprPlugin, LevelSelector, PipButton, FullButton],
-    levelSelectorConfig: {
-      labels: {6:'1080',5:'720',4:'480',3:'360',2:'240',1:'120',0:'Auto'},
-      labelCallback: (resolution,label)=>label
-    },
-    playback: {
-      hlsjsConfig: { p2pConfig: { logLevel: 'debug', live: true } }
-    }
-  })
 </script>
 </body>
 </html>
