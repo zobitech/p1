@@ -1,11 +1,8 @@
 <html lang="en"> 
-
-    <title>CLAPPR PLAYER</title>
-
 <head>
-<meta charset="UTF-8"></meta>
-<meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0 , user-scalable=no">
-<title> Clapper - Video Player</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Clapper - Video Player</title>
 <script src="//cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/clappr-plugin.min.js"></script>
@@ -34,12 +31,36 @@
     margin: 0;
     padding: 0;       
   }  
+  .control-buttons {
+    position: absolute;
+    z-index: 100;
+    top: 6px;
+    right: 5px;
+    display: flex;
+    gap: 5px;
+  }
+  .control-button {
+    height: 30px;
+    width: 30px;
+    color: rgb(204, 204, 204);
+    border: 2px solid rgb(204, 204, 204);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>
 </head>
 <body>
 <div class="video-con embed-responsive">
-  <meta content="no-referrer" name="referrer"></meta>
+  <meta content="no-referrer" name="referrer">
   <div id="vid"></div>
+  <div class="control-buttons">
+    <button class="control-button" id="pipButton" title="Picture-in-Picture">🖼</button>
+    <button class="control-button" id="fullscreenButton" title="Fullscreen">⛶</button>
+  </div>
   <script>
     function getQueryParam(param) {
       const queryParams = new URLSearchParams(window.location.search);
@@ -51,14 +72,13 @@
     const player = new Clappr.Player({
       mimeType: 'application/x-mpegURL',
       maxBufferLength: 2000000,
- autoPlay: true, 
-autoPlayVisible: 'partial',
-mute: true,
+      autoPlay: true,
+      autoPlayVisible: 'partial',
+      mute: true,
       height: '100%',
       width: '100%',
       plugins: [CDNByeClapprPlugin, LevelSelector],
       plugins: {"core": [LevelSelector]}, 
-      
       parentId: '#vid',
       source: videoSource,
       poster: '',
@@ -76,7 +96,7 @@ mute: true,
           0: 'Auto'
         },
         labelCallback: function (resolution, label) {
-          return label ;
+          return label;
         }
       },
       playback: {
@@ -87,6 +107,43 @@ mute: true,
           }
         }
       }
+    });
+
+    // Picture-in-Picture functionality
+    const pipButton = document.getElementById('pipButton');
+    if (document.pictureInPictureEnabled) {
+      pipButton.addEventListener('click', async () => {
+        try {
+          const videoElement = player.getPlugin('hlsjs')._hls.media;
+          if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+          } else {
+            await videoElement.requestPictureInPicture();
+          }
+        } catch (error) {
+          console.error('PiP error:', error);
+        }
+      });
+    } else {
+      pipButton.style.display = 'none'; // Hide PiP button if not supported
+    }
+
+    // Fullscreen functionality
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    fullscreenButton.addEventListener('click', () => {
+      const playerElement = document.getElementById('vid');
+      if (!document.fullscreenElement) {
+        playerElement.requestFullscreen().catch(err => {
+          console.error('Fullscreen error:', err);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Update button text based on fullscreen state
+    document.addEventListener('fullscreenchange', () => {
+      fullscreenButton.textContent = document.fullscreenElement ? '↙' : '⛶';
     });
   </script>
 </div>
