@@ -2,128 +2,150 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DPlayer - Video Player</title>
-<script src="https://cdn.jsdelivr.net/npm/dplayer@1.27.1/dist/DPlayer.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
-<link href="https://www.hls-player.net/fav.png" rel="icon" type="image/x-icon"/>
+<title>Clapper - Video Player</title>
+<script src="//cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/clappr-plugin.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/clappr/clappr-level-selector-plugin@latest/dist/level-selector.min.js"></script>
+<link href='https://www.hls-player.net/fav.png' rel='icon' type='image/x-icon'/>
+
 <style>
   .video-con {
     position: relative;
-    width: 100%;
-    height: 100vh;
+    width: 100%; /* Ensures the video container takes full width */
   }
   .join-us {
     position: absolute;
-    z-index: 1000;
-    top: 6px;
-    left: 5px;
+    z-index: 100;
+    top: 6px; /* Adjust this value to move the button up or down */
+    left: 5px; /* Adjust this value to move the button left or right */
     height: 30px;
     width: 90px;
     color: rgb(204, 204, 204);
     border: 2px solid rgb(204, 204, 204);
-    padding: 1px 0;
+    padding: 1px 0px;
     border-radius: 2px;
     text-align: center;
-    background: rgba(0, 0, 0, 0.5);
-    cursor: pointer;
-    text-decoration: none;
   }
   body {
     margin: 0;
-    padding: 0;
-  }
-  .error-message {
+    padding: 0;       
+  }  
+  .control-buttons {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: red;
-    font-size: 18px;
-    z-index: 1000;
-    text-align: center;
+    z-index: 100;
+    top: 6px;
+    right: 5px;
+    display: flex;
+    gap: 5px;
+  }
+  .control-button {
+    height: 30px;
+    width: 30px;
+    color: rgb(204, 204, 204);
+    border: 2px solid rgb(204, 204, 204);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>
 </head>
 <body>
-<div class="video-con">
+<div class="video-con embed-responsive">
   <meta content="no-referrer" name="referrer">
-  <div id="dplayer"></div>
-  <a class="join-us" href="https://t.me/zobitv">Join Us</a>
-  <div id="error-message" class="error-message" style="display: none;"></div>
-</div>
-<script>
-  function getQueryParam(param) {
-    try {
+  <div id="vid"></div>
+  <div class="control-buttons">
+    <button class="control-button" id="pipButton" title="Picture-in-Picture">🖼</button>
+    <button class="control-button" id="fullscreenButton" title="Fullscreen">⛶</button>
+  </div>
+  <script>
+    function getQueryParam(param) {
       const queryParams = new URLSearchParams(window.location.search);
       return queryParams.get(param);
-    } catch (e) {
-      console.error('Error parsing query parameters:', e);
-      return null;
     }
-  }
 
-  function showError(message) {
-    const errorDiv = document.getElementById('error-message');
-    errorDiv.textContent = message;
-    errorDiv.style.display = 'block';
-  }
+    const videoSource = getQueryParam('url');
 
-  const videoSource = getQueryParam('url');
-
-  if (!videoSource) {
-    showError('No video URL provided in the query parameter.');
-    throw new Error('No video URL provided');
-  }
-
-  let dp;
-  try {
-    dp = new DPlayer({
-      container: document.getElementById('dplayer'),
-      autoplay: true,
-      muted: true,
-      video: {
-        url: videoSource,
-        type: 'hls'
-      },
-      logo: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
-      logoLink: 'https://t.me/zobitv',
-      logoPosition: 'top-right',
-      contextmenu: [
-        {
-          text: 'Join Us',
-          link: 'https://t.me/zobitv'
+    const player = new Clappr.Player({
+      mimeType: 'application/x-mpegURL',
+      maxBufferLength: 2000000,
+      autoPlay: true,
+      autoPlayVisible: 'partial',
+      mute: true,
+      height: '100%',
+      width: '100%',
+      plugins: [CDNByeClapprPlugin, LevelSelector],
+      plugins: {"core": [LevelSelector]}, 
+      parentId: '#vid',
+      source: videoSource,
+      poster: '',
+      watermark: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
+      watermarkLink: 'https://t.me/zobitv',
+      position: 'top-right',
+      levelSelectorConfig: {
+        labels: {
+          6: '1080',
+          5: '720',
+          4: '480',
+          3: '360',
+          2: '240',
+          1: '120',
+          0: 'Auto'
+        },
+        labelCallback: function (resolution, label) {
+          return label;
         }
-      ]
+      },
+      playback: {
+        hlsjsConfig: {
+          p2pConfig: {
+            logLevel: 'debug',
+            live: true
+          }
+        }
+      }
     });
 
-    // Handle HLS playback
-    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        maxBufferLength: 30
+    // Picture-in-Picture functionality
+    const pipButton = document.getElementById('pipButton');
+    if (document.pictureInPictureEnabled) {
+      pipButton.addEventListener('click', async () => {
+        try {
+          const videoElement = player.getPlugin('hlsjs')._hls.media;
+          if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+          } else {
+            await videoElement.requestPictureInPicture();
+          }
+        } catch (error) {
+          console.error('PiP error:', error);
+        }
       });
-      hls.loadSource(videoSource);
-      hls.attachMedia(dp.video);
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('HLS error:', data);
-        showError('Failed to load video stream. Please check the URL or try again later.');
-      });
-    } else if (dp.video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS support (e.g., Safari)
-      dp.video.src = videoSource;
     } else {
-      showError('Your browser does not support HLS playback.');
+      pipButton.style.display = 'none'; // Hide PiP button if not supported
     }
 
-    // Handle DPlayer errors
-    dp.on('error', () => {
-      showError('Error playing the video. Please check the video source.');
+    // Fullscreen functionality
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    fullscreenButton.addEventListener('click', () => {
+      const playerElement = document.getElementById('vid');
+      if (!document.fullscreenElement) {
+        playerElement.requestFullscreen().catch(err => {
+          console.error('Fullscreen error:', err);
+        });
+      } else {
+        document.exitFullscreen();
+      }
     });
 
-  } catch (error) {
-    console.error('DPlayer initialization error:', error);
-    showError('Failed to initialize video player.');
-  }
-</script>
+    // Update button text based on fullscreen state
+    document.addEventListener('fullscreenchange', () => {
+      fullscreenButton.textContent = document.fullscreenElement ? '↙' : '⛶';
+    });
+  </script>
+</div>
 </body>
 </html>
