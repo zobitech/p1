@@ -24,7 +24,7 @@
       background:none;
       border:0;
       color:#fff;
-      font-size:16px;
+      font-size:18px;
       padding:6px 10px;
       cursor:pointer;
     }
@@ -68,11 +68,11 @@
       }
     });
 
-    // Add PiP & Fullscreen buttons
+    // Add PiP & Fullscreen buttons inside control bar
     player.on(Clappr.Events.PLAYER_READY, () => {
-      const controls = player.core.mediaControl.$el.find('.media-control-right-panel')
+      const rightPanel = player.core.mediaControl.$el.find('.media-control-right-panel')
 
-      // PiP
+      // PiP button
       if (document.pictureInPictureEnabled) {
         const pipBtn = document.createElement('button')
         pipBtn.className = 'clappr-extra-btn'
@@ -88,10 +88,10 @@
             }
           } catch (e) { console.error(e) }
         }
-        controls.append(pipBtn)
+        rightPanel.append(pipBtn)
       }
 
-      // Fullscreen
+      // Fullscreen button
       const fsBtn = document.createElement('button')
       fsBtn.className = 'clappr-extra-btn'
       fsBtn.innerHTML = '⛶'
@@ -114,7 +114,7 @@
       document.addEventListener('fullscreenchange',()=>{
         fsBtn.textContent = document.fullscreenElement ? '↙' : '⛶'
       })
-      controls.append(fsBtn)
+      rightPanel.append(fsBtn)
     })
   }
 </script>
