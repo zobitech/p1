@@ -2,17 +2,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clapper - Video Player</title>
-<script src="//cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
-<script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
-<script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/clappr-plugin.min.js"></script>
-<script src="//cdn.jsdelivr.net/gh/clappr/clappr-level-selector-plugin@latest/dist/level-selector.min.js"></script>
-<link href='https://www.hls-player.net/fav.png' rel='icon' type='image/x-icon'/>
-
+<title>DPlayer - Video Player</title>
+<script src="https://cdn.jsdelivr.net/npm/dplayer@latest/dist/DPlayer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<link href="https://www.hls-player.net/fav.png" rel="icon" type="image/x-icon"/>
 <style>
   .video-con {
     position: relative;
     width: 100%; /* Ensures the video container takes full width */
+    height: 100vh; /* Full viewport height for better display */
   }
   .join-us {
     position: absolute;
@@ -26,126 +24,93 @@
     padding: 1px 0px;
     border-radius: 2px;
     text-align: center;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
   }
   body {
     margin: 0;
     padding: 0;       
-  }  
-  .control-buttons {
-    position: absolute;
-    z-index: 100;
-    top: 6px;
-    right: 5px;
-    display: flex;
-    gap: 5px;
   }
-  .control-button {
-    height: 30px;
-    width: 30px;
-    color: rgb(204, 204, 204);
-    border: 2px solid rgb(204, 204, 204);
-    border-radius: 2px;
-    background: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* Ensure DPlayer's control bar is visible and styled */
+  .dplayer-controller {
+    z-index: 101;
   }
 </style>
 </head>
 <body>
-<div class="video-con embed-responsive">
+<div class="video-con">
   <meta content="no-referrer" name="referrer">
-  <div id="vid"></div>
-  <div class="control-buttons">
-    <button class="control-button" id="pipButton" title="Picture-in-Picture">🖼</button>
-    <button class="control-button" id="fullscreenButton" title="Fullscreen">⛶</button>
-  </div>
-  <script>
-    function getQueryParam(param) {
-      const queryParams = new URLSearchParams(window.location.search);
-      return queryParams.get(param);
-    }
-
-    const videoSource = getQueryParam('url');
-
-    const player = new Clappr.Player({
-      mimeType: 'application/x-mpegURL',
-      maxBufferLength: 2000000,
-      autoPlay: true,
-      autoPlayVisible: 'partial',
-      mute: true,
-      height: '100%',
-      width: '100%',
-      plugins: [CDNByeClapprPlugin, LevelSelector],
-      plugins: {"core": [LevelSelector]}, 
-      parentId: '#vid',
-      source: videoSource,
-      poster: '',
-      watermark: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
-      watermarkLink: 'https://t.me/zobitv',
-      position: 'top-right',
-      levelSelectorConfig: {
-        labels: {
-          6: '1080',
-          5: '720',
-          4: '480',
-          3: '360',
-          2: '240',
-          1: '120',
-          0: 'Auto'
-        },
-        labelCallback: function (resolution, label) {
-          return label;
-        }
-      },
-      playback: {
-        hlsjsConfig: {
-          p2pConfig: {
-            logLevel: 'debug',
-            live: true
-          }
-        }
-      }
-    });
-
-    // Picture-in-Picture functionality
-    const pipButton = document.getElementById('pipButton');
-    if (document.pictureInPictureEnabled) {
-      pipButton.addEventListener('click', async () => {
-        try {
-          const videoElement = player.getPlugin('hlsjs')._hls.media;
-          if (document.pictureInPictureElement) {
-            await document.exitPictureInPicture();
-          } else {
-            await videoElement.requestPictureInPicture();
-          }
-        } catch (error) {
-          console.error('PiP error:', error);
-        }
-      });
-    } else {
-      pipButton.style.display = 'none'; // Hide PiP button if not supported
-    }
-
-    // Fullscreen functionality
-    const fullscreenButton = document.getElementById('fullscreenButton');
-    fullscreenButton.addEventListener('click', () => {
-      const playerElement = document.getElementById('vid');
-      if (!document.fullscreenElement) {
-        playerElement.requestFullscreen().catch(err => {
-          console.error('Fullscreen error:', err);
-        });
-      } else {
-        document.exitFullscreen();
-      }
-    });
-
-    // Update button text based on fullscreen state
-    document.addEventListener('fullscreenchange', () => {
-      fullscreenButton.textContent = document.fullscreenElement ? '↙' : '⛶';
-    });
-  </script>
+  <div id="dplayer"></div>
+  <a class="join-us" href="https://t.me/zobitv">Join Us</a>
 </div>
+<script>
+  function getQueryParam(param) {
+    const queryParams = new URLSearchParams(window.location.search);
+    return queryParams.get(param);
+  }
+
+  const videoSource = getQueryParam('url');
+
+  const dp = new DPlayer({
+    container: document.getElementById('dplayer'),
+    autoplay: true,
+    muted: true,
+    video: {
+      url: videoSource,
+      type: 'hls'
+    },
+    pluginOptions: {
+      hls: {
+        // Optional HLS configuration if needed
+      }
+    },
+    logo: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png', // Watermark
+    logoLink: 'https://t.me/zobitv',
+    logoPosition: 'top-right',
+    contextmenu: [
+      {
+        text: 'Join Us',
+        link: 'https://t.me/zobitv'
+      }
+    ],
+    highlight: [
+      {
+        text: 'Auto',
+        level: 0
+      },
+      {
+        text: '1080p',
+        level: 6
+      },
+      {
+        text: '720p',
+        level: 5
+      },
+      {
+        text: '480p',
+        level: 4
+      },
+      {
+        text: '360p',
+        level: 3
+      },
+      {
+        text: '240p',
+        level: 2
+      },
+      {
+        text: '120p',
+        level: 1
+      }
+    ]
+  });
+
+  // Ensure HLS.js is used for HLS streams
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(videoSource);
+    hls.attachMedia(dp.video);
+  }
+</script>
 </body>
 </html>
