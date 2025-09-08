@@ -1,196 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="en"> 
+
+    <title>CLAPPR PLAYER</title>
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="referrer" content="no-referrer">
-  <title>Clappr Video Player - Zobi TV</title>
-  <link href="https://www.hls-player.net/fav.png" rel="icon" type="image/x-icon">
-  <!-- Optimized Clappr and plugin scripts with specific versions for reliability -->
-  <script src="https://cdn.jsdelivr.net/npm/@clappr/player@0.4.37/dist/clappr.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cdnbye@3.2.2/dist/hlsjs-p2p-engine.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@clappr/hlsjs-playback@1.2.0/dist/hlsjs-playback.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cdnbye@3.2.2/dist/clappr-plugin.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/clappr-level-selector-plugin@0.2.2/dist/level-selector.min.js"></script>
+<meta charset="UTF-8"></meta>
+<meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0 , user-scalable=no">
+<title> Clapper - Video Player</title>
+<script src="//cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/clappr-plugin.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/clappr/clappr-level-selector-plugin@latest/dist/level-selector.min.js"></script>
+<link href='https://www.hls-player.net/fav.png' rel='icon' type='image/x-icon'/>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      overflow: hidden;
-    }
-
-    .video-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      background: #000;
-    }
-
-    #player {
-      width: 100%;
-      height: 100%;
-    }
-
-    .join-us {
-      position: absolute;
-      z-index: 1000;
-      top: 10px;
-      left: 10px;
-      padding: 8px 16px;
-      background: rgba(0, 0, 0, 0.7);
-      color: #fff;
-      border: 2px solid #ccc;
-      border-radius: 4px;
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
-
-    .join-us:hover {
-      background: rgba(0, 0, 0, 0.9);
-      border-color: #fff;
-      transform: scale(1.05);
-    }
-
-    .error-message {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #fff;
-      background: rgba(255, 0, 0, 0.8);
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-      z-index: 2000;
-    }
-
-    /* Ensure watermark visibility */
-    .watermark {
-      z-index: 999 !important;
-      opacity: 0.9;
-      max-width: 120px; /* Adjust size as needed */
-      transition: opacity 0.3s ease;
-    }
-
-    .watermark:hover {
-      opacity: 1;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .join-us {
-        padding: 6px 12px;
-        font-size: 12px;
-      }
-      .watermark {
-        max-width: 80px; /* Smaller watermark on mobile */
-      }
-    }
-  </style>
+<style>
+  .video-con {
+    position: relative;
+    width: 100%; /* Ensures the video container takes full width */
+  }
+  .join-us {
+    position: absolute;
+    z-index: 100;
+    top: 6px; /* Adjust this value to move the button up or down */
+    left: 5px; /* Adjust this value to move the button left or right */
+    height: 30px;
+    width: 90px;
+    color: rgb(204, 204, 204);
+    border: 2px solid rgb(204, 204, 204);
+    padding: 1px 0px;
+    border-radius: 2px;
+    text-align: center;
+  }
+  body {
+    margin: 0;
+    padding: 0;       
+  }  
+</style>
 </head>
 <body>
-  <div class="video-container">
-    <div id="player"></div>
-    <a href="https://t.me/zobitv" class="join-us">Join Zobi TV</a>
-    <div class="error-message" id="error-message"></div>
-  </div>
-
+<div class="video-con embed-responsive">
+  <meta content="no-referrer" name="referrer"></meta>
+  <div id="vid"></div>
   <script>
-    // Utility function to get query parameters
     function getQueryParam(param) {
       const queryParams = new URLSearchParams(window.location.search);
       return queryParams.get(param);
     }
 
-    // Error handling function
-    function showError(message) {
-      const errorDiv = document.getElementById('error-message');
-      errorDiv.textContent = message;
-      errorDiv.style.display = 'block';
-    }
-
-    // Get video source from URL
     const videoSource = getQueryParam('url');
 
-    // Validate video source
-    if (!videoSource) {
-      showError('No video URL provided. Please add a valid ?url= parameter in the URL.');
-      throw new Error('Missing video URL');
-    }
-
-    // Initialize Clappr player
-    try {
-      const player = new Clappr.Player({
-        source: videoSource,
-        mimeType: 'application/x-mpegURL',
-        parentId: '#player',
-        autoPlay: true,
-        autoPlayVisible: 'partial',
-        muted: true,
-        height: '100%',
-        width: '100%',
-        poster: '',
-        watermark: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
-        watermarkLink: 'https://t.me/zobitv',
-        position: 'top-right',
-        plugins: [CDNByeClapprPlugin, HlsjsPlayback, LevelSelector],
-        levelSelectorConfig: {
-          labels: {
-            6: '1080',
-            5: '720',
-            4: '480',
-            3: '360',
-            2: '240',
-            1: '120',
-            0: 'Auto'
-          },
-          labelCallback: function (resolution, label) {
-            return label;
-          }
+    const player = new Clappr.Player({
+      mimeType: 'application/x-mpegURL',
+      maxBufferLength: 2000000,
+ autoPlay: true, 
+autoPlayVisible: 'partial',
+mute: true,
+      height: '100%',
+      width: '100%',
+      plugins: [CDNByeClapprPlugin, LevelSelector],
+      plugins: {"core": [LevelSelector]}, 
+      
+      parentId: '#vid',
+      source: videoSource,
+      poster: '',
+      watermark: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
+      watermarkLink: 'https://t.me/zobitv',
+      position: 'top-right',
+      levelSelectorConfig: {
+        labels: {
+          6: '1080',
+          5: '720',
+          4: '480',
+          3: '360',
+          2: '240',
+          1: '120',
+          0: 'Auto'
         },
-        playback: {
-          hlsjsConfig: {
-            maxBufferLength: 60, // Reduced for better performance
-            p2pConfig: {
-              logLevel: 'warn', // Less verbose logging
-              live: true,
-              announceLocation: true
-            }
-          }
-        },
-        events: {
-          onError: (error) => {
-            console.error('Player error:', error);
-            showError('Failed to load video. Please check the URL or try again later.');
-          },
-          onReady: () => {
-            console.log('Player is ready. Checking watermark...');
-            const watermark = document.querySelector('.watermark img');
-            if (watermark) {
-              console.log('Watermark found:', watermark.src);
-            } else {
-              console.warn('Watermark not found. Check watermark URL or player configuration.');
-            }
+        labelCallback: function (resolution, label) {
+          return label ;
+        }
+      },
+      playback: {
+        hlsjsConfig: {
+          p2pConfig: {
+            logLevel: 'debug',
+            live: true
           }
         }
-      });
-
-      // Handle playback level change
-      player.on('playback:levelchange', (levels) => {
-        console.log('Quality level changed:', levels);
-      });
-
-    } catch (error) {
-      console.error('Player initialization failed:', error);
-      showError('Error initializing video player. Please try again.');
-    }
+      }
+    });
   </script>
+</div>
 </body>
 </html>
