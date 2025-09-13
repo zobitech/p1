@@ -1,122 +1,66 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Clapper - Video Player</title>
-
-  <!-- Clappr & Plugins -->
-  <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cdnbye@latest/dist/clappr-plugin.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/clappr/clappr-level-selector-plugin@latest/dist/level-selector.min.js"></script>
-
+  <title>M3U8 Player</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body { margin:0; padding:0; background:#000; }
-    .video-con { width:100%; height:100vh; display:flex; align-items:center; justify-content:center; }
-    .placeholder {
-      color:#888;
-      font-size:18px;
-      font-family:sans-serif;
-      text-align:center;
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
-    .clappr-extra-btn {
-      background:none;
-      border:0;
-      color:#fff;
-      font-size:18px;
-      padding:6px 10px;
-      cursor:pointer;
+    .player-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    #myLogo {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 60px;
+      height: 40px;
+      z-index: 1000;
+      opacity: 0.9;
+      pointer-events: none; /* logo won’t block clicks */
+    }
+    @media (max-width: 768px) {
+      #myLogo {
+        width: 40px;
+        height: 25px;
+        top: 8px;
+        right: 8px;
+      }
     }
   </style>
 </head>
 <body>
-<div class="video-con">
-  <div id="vid" style="width:100%; height:100%;"></div>
-  <div id="placeholder" class="placeholder">CLICK channel to play</div>
-</div>
+  <div class="player-container">
+    <iframe id="player" allowfullscreen></iframe>
+    <img id="myLogo" src="https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png" alt="Logo">
+  </div>
 
-<script>
-  function getQueryParam(param) {
+  <script>
     const queryParams = new URLSearchParams(window.location.search);
-    return queryParams.get(param);
-  }
+    const url = queryParams.get("url");
 
-  const videoSource = getQueryParam('url');
-
-  if (videoSource) {
-    document.getElementById("placeholder").style.display = "none";
-
-    const player = new Clappr.Player({
-      parentId: '#vid',
-      source: videoSource,
-      mimeType: 'application/x-mpegURL',
-      autoPlay: true,
-      mute: true,
-      height: '100%',
-      width: '100%',
-      watermark: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
-      watermarkLink: 'https://t.me/zobitv',
-      position: 'top-right',
-      plugins: [CDNByeClapprPlugin, LevelSelector],
-      levelSelectorConfig: {
-        labels: {6:'1080',5:'720',4:'480',3:'360',2:'240',1:'120',0:'Auto'},
-        labelCallback: (resolution,label)=>label
-      },
-      playback: {
-        hlsjsConfig: { p2pConfig: { logLevel: 'debug', live: true } }
-      }
-    });
-
-    // Add PiP & Fullscreen buttons inside control bar
-    player.on(Clappr.Events.PLAYER_READY, () => {
-      const rightPanel = player.core.mediaControl.$el.find('.media-control-right-panel')
-
-      // PiP button
-      if (document.pictureInPictureEnabled) {
-        const pipBtn = document.createElement('button')
-        pipBtn.className = 'clappr-extra-btn'
-        pipBtn.innerHTML = '🖼'
-        pipBtn.title = 'Picture-in-Picture'
-        pipBtn.onclick = async () => {
-          try {
-            const videoEl = player.getPlugin('hlsjs')._hls.media
-            if (document.pictureInPictureElement) {
-              await document.exitPictureInPicture()
-            } else {
-              await videoEl.requestPictureInPicture()
-            }
-          } catch (e) { console.error(e) }
-        }
-        rightPanel.append(pipBtn)
-      }
-
-      // Fullscreen button
-      const fsBtn = document.createElement('button')
-      fsBtn.className = 'clappr-extra-btn'
-      fsBtn.innerHTML = '⛶'
-      fsBtn.title = 'Fullscreen'
-      fsBtn.onclick = async () => {
-        try {
-          if (!document.fullscreenElement) {
-            await document.documentElement.requestFullscreen()
-            if (screen.orientation && screen.orientation.lock) {
-              try { await screen.orientation.lock('landscape') } catch(e) { console.warn('Orientation lock failed', e) }
-            }
-          } else {
-            await document.exitFullscreen()
-            if (screen.orientation && screen.orientation.unlock) {
-              screen.orientation.unlock()
-            }
-          }
-        } catch (err) { console.error(err) }
-      }
-      document.addEventListener('fullscreenchange',()=>{
-        fsBtn.textContent = document.fullscreenElement ? '↙' : '⛶'
-      })
-      rightPanel.append(fsBtn)
-    })
-  }
-</script>
+    if (url) {
+      document.getElementById("player").src =
+        "https://anym3u8player.com/tv/p.php?url=" + encodeURIComponent(url);
+    } else {
+      document.body.innerHTML = "<h2 style='color:white'>No stream URL provided.</h2>";
+    }
+  </script>
 </body>
 </html>
