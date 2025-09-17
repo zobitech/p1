@@ -1,51 +1,45 @@
 <html lang="en"> 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0 , user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
   <title>Clapper - Video Player</title>
+
+  <!-- Clappr & Plugins -->
   <script src="//cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
   <script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js"></script>
   <script src="//cdn.jsdelivr.net/npm/cdnbye@latest/dist/clappr-plugin.min.js"></script>
   <script src="//cdn.jsdelivr.net/gh/clappr/clappr-level-selector-plugin@latest/dist/level-selector.min.js"></script>
+
   <link href="https://www.hls-player.net/fav.png" rel="icon" type="image/x-icon"/>
 
   <style>
     .video-con {
       position: relative;
       width: 100%;
-    }
-    .join-us {
-      position: absolute;
-      z-index: 100;
-      top: 6px;
-      left: 5px;
-      height: 30px;
-      width: 90px;
-      color: rgb(204, 204, 204);
-      border: 2px solid rgb(204, 204, 204);
-      padding: 1px 0px;
-      border-radius: 2px;
-      text-align: center;
+      height: 100vh; /* full screen */
+      background: black;
     }
     body {
       margin: 0;
       padding: 0;       
+      background: black;
     }
   </style>
 </head>
 <body>
-  <div class="video-con embed-responsive">
+  <div class="video-con">
     <meta content="no-referrer" name="referrer">
     <div id="vid"></div>
   </div>
 
   <script>
+    // Get ?url=... from query string
     function getQueryParam(param) {
       const queryParams = new URLSearchParams(window.location.search);
       return queryParams.get(param);
     }
 
-    const videoSource = getQueryParam('url');
+    const videoSource = getQueryParam('url') || "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"; // fallback test stream
 
     const player = new Clappr.Player({
       source: videoSource,
@@ -54,9 +48,8 @@
       autoPlay: true,
       autoPlayVisible: 'partial',
       mute: true,
-      height: '100%',
       width: '100%',
-      poster: '',
+      height: '100%',
       watermark: 'https://i.postimg.cc/rsjvddTg/ztvlogo-removebg-preview.png',
       watermarkLink: 'https://wa.me/923409835287',
       position: 'top-right',
@@ -81,9 +74,21 @@
 
       playback: {
         hlsjsConfig: {
+          // ⚡ Optimized HLS.js settings
+          maxBufferLength: 10,           // seconds of buffer
+          maxMaxBufferLength: 20,        // hard cap
+          liveSyncDuration: 3,           // stay close to live edge
+          liveMaxLatencyDuration: 10,    // prevent falling too far behind
+          enableWorker: true,            // parsing in worker thread
+          lowLatencyMode: true,          // for live streaming
           p2pConfig: {
-            logLevel: 'debug',
-            live: true
+            logLevel: 'warn',            // reduce log spam
+            live: true,
+            rtcConfig: {
+              iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+              ]
+            }
           }
         }
       }
